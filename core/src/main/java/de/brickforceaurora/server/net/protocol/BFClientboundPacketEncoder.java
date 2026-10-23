@@ -62,13 +62,14 @@ public final class BFClientboundPacketEncoder extends MessageToByteEncoder<IClie
             }
         }
 
+        // Only the actual body range, the backing array of the netty buffer is usually larger
         byte crc = 0;
         if (sendKey == ProtocolConstant.KEY_MAX_VALUE) {
-            for (int i = 0; i < body.length; i++) {
+            for (int i = bodyOffset; i < bodyOffset + bodyLength; i++) {
                 crc ^= body[i];
             }
         } else {
-            for (int i = 0; i < body.length; i++) {
+            for (int i = bodyOffset; i < bodyOffset + bodyLength; i++) {
                 crc ^= body[i];
                 body[i] ^= sendKey;
             }

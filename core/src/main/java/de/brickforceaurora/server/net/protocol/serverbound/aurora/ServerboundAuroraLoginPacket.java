@@ -72,6 +72,10 @@ public class ServerboundAuroraLoginPacket implements IServerboundPacket {
             String token = buffer.readString();
             yield new ILoginData.Transfer(originChannel, token);
         }
+        case ACCOUNT_TICKET -> {
+            String ticket = buffer.readString();
+            yield new ILoginData.AccountTicket(ticket);
+        }
         default -> {
             yield ILoginData.NONE;
         }

@@ -78,11 +78,26 @@ public final class Encryption {
         }
     }
 
+    /**
+     * Encrypts the buffer with RSA/PKCS#1 v1.5.
+     *
+     * RSA can only encrypt {@code keySize - 11} bytes at once, so larger buffers are split into chunks of that size and every chunk
+     * is encrypted into one block of {@code keySize} bytes. The blocks are simply concatenated.
+     */
     public static byte[] encrypt(byte[] bytes, PublicKey key) {
         try {
             Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
             cipher.init(Cipher.ENCRYPT_MODE, key);
-            return cipher.doFinal(bytes);
+            int blockSize = blockSize(key);
+            int chunkSize = blockSize - 11;
+            int chunks = Math.max(1, (bytes.length + chunkSize - 1) / chunkSize);
+            byte[] output = new byte[chunks * blockSize];
+            for (int i = 0; i < chunks; i++) {
+                int offset = i * chunkSize;
+                byte[] block = cipher.doFinal(bytes, offset, Math.min(chunkSize, bytes.length - offset));
+                System.arraycopy(block, 0, output, i * blockSize, blockSize);
+            }
+            return output;
         } catch (NoSuchAlgorithmException | NoSuchPaddingException | IllegalBlockSizeException | BadPaddingException | InvalidKeyException e) {
             throw new IllegalStateException("Couldn't encrypt buffer", e);
         }
@@ -92,10 +107,25 @@ public final class Encryption {
         try {
             Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
             cipher.init(Cipher.DECRYPT_MODE, key);
-            return cipher.doFinal(bytes);
+            int blockSize = blockSize(key);
+            if (bytes.length == 0 || bytes.length % blockSize != 0) {
+                throw new IllegalBlockSizeException("Encrypted buffer is not a multiple of " + blockSize + " bytes");
+            }
+            java.io.ByteArrayOutputStream output = new java.io.ByteArrayOutputStream(bytes.length);
+            for (int offset = 0; offset < bytes.length; offset += blockSize) {
+                output.writeBytes(cipher.doFinal(bytes, offset, blockSize));
+            }
+            return output.toByteArray();
         } catch (NoSuchAlgorithmException | NoSuchPaddingException | IllegalBlockSizeException | BadPaddingException | InvalidKeyException e) {
             throw new IllegalStateException("Couldn't decrypt buffer", e);
         }
+    }
+
+    private static int blockSize(java.security.Key key) {
+        if (!(key instanceof java.security.interfaces.RSAKey rsaKey)) {
+            throw new IllegalArgumentException("Not an RSA key");
+        }
+        return (rsaKey.getModulus().bitLength() + 7) / 8;
     }
 
 }

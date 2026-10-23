@@ -7,7 +7,11 @@ public enum LoginType implements IFlag {
 
     PASSWORD(0x1),
     TRANSFER_TOKEN(0x2),
-    OAUTH(0x4, false);
+    OAUTH(0x4, false),
+    /**
+     * Play ticket issued by the account service to the launcher, verified by the server with the account service.
+     */
+    ACCOUNT_TICKET(0x8);
 
     public static final FlagManager<LoginType> MANAGER = FlagManager.ofEnum(LoginType.class);
 

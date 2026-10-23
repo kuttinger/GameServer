@@ -4,9 +4,12 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 
 import de.brickforceaurora.server.IBrickForceServer;
+import de.brickforceaurora.server.ServerOptions;
+import de.brickforceaurora.server.account.AccountClient;
 import de.brickforceaurora.server.match.gamemode.GameModeManager;
 import de.brickforceaurora.server.match.room.RoomManager;
 import de.brickforceaurora.server.net.BrickForceServer;
+import de.brickforceaurora.server.net.login.AccountLoginHandler;
 import de.brickforceaurora.server.net.login.DevLoginHandler;
 import de.brickforceaurora.server.net.login.ILoginHandler;
 import de.brickforceaurora.server.util.AnsiSysOutLogger;
@@ -31,7 +34,7 @@ public class MatchServerApp implements ISnowFrameApp<MatchServerApp>, IBrickForc
         logger.setDebug(Arrays.stream(args).anyMatch(str -> "--debug".equalsIgnoreCase(str)));
         logger.setTracking(Arrays.stream(args).anyMatch(str -> "--trace".equalsIgnoreCase(str)));
 
-        return snowFrame = SnowFrame.builder(new MatchServerApp()).logger(logger).build();
+        return snowFrame = SnowFrame.builder(new MatchServerApp(ServerOptions.parse(args))).logger(logger).build();
     }
 
     public static SnowFrame<MatchServerApp> get() {
@@ -52,6 +55,12 @@ public class MatchServerApp implements ISnowFrameApp<MatchServerApp>, IBrickForc
     private BrickForceServer<MatchServerApp> server;
     private ILoginHandler loginHandler;
 
+    private final ServerOptions options;
+
+    private MatchServerApp(final ServerOptions options) {
+        this.options = options;
+    }
+
     @Override
     public void setupLifecycle(LifecycleBuilder<MatchServerApp> builder) {
         builder.startupChain().newPhase("server-setup", true).newPhase("server-start", true);
@@ -69,7 +78,13 @@ public class MatchServerApp implements ISnowFrameApp<MatchServerApp>, IBrickForc
         });
         lifecycle.startupChain().register("server-start", Stage.PRE, frame -> {
             server = new BrickForceServer<>(frame, this);
-            loginHandler = new DevLoginHandler(server.netManager());
+            if (options.hasAccountService()) {
+                loginHandler = new AccountLoginHandler(server.netManager(), new AccountClient(options.accountUrl()));
+                frame.logger().info("Using account service at {0}", options.accountUrl());
+            } else {
+                loginHandler = new DevLoginHandler(server.netManager());
+                frame.logger().warning("No account service configured (--account-url), using dev login without persistence");
+            }
         }).register("server-start", Stage.MAIN, _ -> {
             server.open();
         });
@@ -83,6 +98,22 @@ public class MatchServerApp implements ISnowFrameApp<MatchServerApp>, IBrickForc
     @Override
     public ILoginHandler loginHandler() {
         return loginHandler;
+    }
+
+    @Override
+    public int port() {
+        return options.port();
+    }
+
+    public ServerOptions options() {
+        return options;
+    }
+
+    /**
+     * @return the account client or {@code null} if the server runs without account service
+     */
+    public AccountClient accountClient() {
+        return loginHandler instanceof AccountLoginHandler accountHandler ? accountHandler.accountClient() : null;
     }
 
     public RoomManager roomManager() {

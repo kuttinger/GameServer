@@ -16,7 +16,16 @@
 		<project.sourceDir>${project.build.directory}/project-sources</project.sourceDir>
 		<pktgen.enabled>false</pktgen.enabled>
 	</properties>
-	
+
+	<dependencies>
+		<!-- JSON for the account service client -->
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+			<version>2.17.2</version>
+		</dependency>
+	</dependencies>
+
 	<!-- Common build parameters -->
 	<build>
 		<plugins>

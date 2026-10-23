@@ -20,10 +20,41 @@
 			<artifactId>core</artifactId>
 			<version>${project.parent.version}</version>
 		</dependency>
+
+		<!-- Integration test: real account service + match server + protocol test client -->
+		<dependency>
+			<groupId>${project.groupId}</groupId>
+			<artifactId>account</artifactId>
+			<version>1.0.0</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter</artifactId>
+			<version>5.11.0</version>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
-	
+
 	<build>
 		<plugins>
+			<plugin>
+				<artifactId>maven-failsafe-plugin</artifactId>
+				<version>3.5.0</version>
+				<configuration>
+					<systemPropertyVariables>
+						<match.jar>${project.build.directory}/jar/${project.build.finalName}.jar</match.jar>
+					</systemPropertyVariables>
+				</configuration>
+				<executions>
+					<execution>
+						<goals>
+							<goal>integration-test</goal>
+							<goal>verify</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
 			<plugin>
 				<artifactId>maven-jar-plugin</artifactId>
 				<version>3.4.2</version>

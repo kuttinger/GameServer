@@ -8,4 +8,6 @@ public interface ILoginData {
     
     public static record Transfer(int originChannel, String token) implements ILoginData {}
 
+    public static record AccountTicket(String ticket) implements ILoginData {}
+
 }
