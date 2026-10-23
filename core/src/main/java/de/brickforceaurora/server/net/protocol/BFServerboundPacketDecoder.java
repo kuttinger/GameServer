@@ -38,6 +38,12 @@ public final class BFServerboundPacketDecoder extends ByteToMessageDecoder {
             final long size = accumulator.readUnsignedIntLE();
             final int id = accumulator.readUnsignedShortLE();
 
+            if (size > ProtocolConstant.MAX_PACKET_SIZE) {
+                // Never allocate what a (malicious) client claims, this would allow crashing the host with a single packet
+                logger.warning("Client {0} sent oversized packet {1} ({2} bytes), disconnecting", client, id, size);
+                ctx.close();
+                return;
+            }
             final byte crc = accumulator.readByte();
             // We don't really care about the meta and src value anywhere therefore we just skip it.
             // If we ever need it the code can simply be uncommented

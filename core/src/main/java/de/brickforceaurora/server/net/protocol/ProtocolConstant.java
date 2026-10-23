@@ -12,6 +12,11 @@ final class ProtocolConstant {
 
     public static final int HEADER_SIZE = 15;
 
+    /**
+     * Largest accepted serverbound body, large data (maps) is sent in chunks by the client
+     */
+    public static final long MAX_PACKET_SIZE = 4 * 1024 * 1024;
+
     public static final byte KEY_MAX_VALUE = (byte) 0xFF;
     public static final byte DEFAULT_RECEIVE_KEY = KEY_MAX_VALUE;
     public static final byte DEFAULT_SEND_KEY = KEY_MAX_VALUE;

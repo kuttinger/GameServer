@@ -83,13 +83,36 @@ class MatchServerAccountIT {
         }
     }
 
+    @Test
+    void oversizedPacketIsRejectedWithoutHurtingTheHost() throws Exception {
+        final int port = freePort();
+        final Process server = startMatchServer(port, "");
+        try {
+            try (Socket socket = new Socket("127.0.0.1", port)) {
+                socket.setSoTimeout(5000);
+                final ByteBuffer header = ByteBuffer.allocate(15).order(java.nio.ByteOrder.LITTLE_ENDIAN);
+                header.putInt(0x7FFFFFF0).putShort((short) 1004).put((byte) 0).putInt(-1).putInt(-1);
+                socket.getOutputStream().write(header.array());
+                socket.getOutputStream().flush();
+                assertEquals(-1, socket.getInputStream().read(), "server should close the connection");
+            }
+            assertTrue(server.isAlive(), "server must survive");
+            try (AuroraTestClient client = new AuroraTestClient("127.0.0.1", port)) {
+                client.handshake();
+            }
+        } finally {
+            server.destroy();
+            server.waitFor();
+        }
+    }
+
     private Process startMatchServer(final int port, final String accountUrl) throws Exception {
         final String jar = System.getProperty("match.jar");
         assertTrue(jar != null && Files.exists(Path.of(jar)), "Packaged match server jar not found: " + jar);
         final Path java = Path.of(System.getProperty("java.home"), "bin", "java");
         // Log next to the jar so it survives the test for debugging
-        final Path log = Path.of(jar).resolveSibling("match-it.log");
-        final Process process = new ProcessBuilder(java.toString(), "-jar", jar, "--debug", "--port=" + port,
+        final Path log = Path.of(jar).resolveSibling("match-it-" + port + ".log");
+        final Process process = new ProcessBuilder(java.toString(), "-jar", jar, "--debug", "--bind=127.0.0.1", "--port=" + port,
             "--account-url=" + accountUrl).directory(dir.toFile()).redirectErrorStream(true).redirectOutput(log.toFile()).start();
         final long deadline = System.currentTimeMillis() + 20_000;
         while (System.currentTimeMillis() < deadline) {

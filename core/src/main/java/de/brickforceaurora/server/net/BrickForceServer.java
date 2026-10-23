@@ -44,7 +44,7 @@ public final class BrickForceServer<S extends ISnowFrameApp<S> & IBrickForceServ
         if (!isAlive()) {
             start();
         }
-        netManager.open(server.port());
+        netManager.open(server.bindAddress(), server.port());
     }
 
     public void close() throws Exception {

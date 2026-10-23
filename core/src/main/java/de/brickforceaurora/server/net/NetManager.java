@@ -190,14 +190,14 @@ public final class NetManager<S extends ISnowFrameApp<S> & IBrickForceServer> im
      * Server logic related
      */
 
-    final void open(int port) throws InterruptedException {
+    final void open(String bindAddress, int port) throws InterruptedException {
         if (serverChannel != null) {
             return;
         }
         bootstrap.group(mainGroup, workerGroup).channel(NioServerSocketChannel.class).childOption(NioChannelOption.SO_KEEPALIVE, false)
             .childOption(NioChannelOption.TCP_NODELAY, true).childHandler(new BFChannelInit(this));
-        serverChannel = bootstrap.bind(port).sync().channel();
-        logger.info("Listening on 0.0.0.0:{0}", port);
+        serverChannel = bootstrap.bind(bindAddress, port).sync().channel();
+        logger.info("Listening on {0}:{1}", bindAddress, port);
         signalManager.call(new NetSignal.ServerStarted(this));
     }
 

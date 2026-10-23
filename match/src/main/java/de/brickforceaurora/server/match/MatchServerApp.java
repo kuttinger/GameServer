@@ -105,6 +105,11 @@ public class MatchServerApp implements ISnowFrameApp<MatchServerApp>, IBrickForc
         return options.port();
     }
 
+    @Override
+    public String bindAddress() {
+        return options.bindAddress();
+    }
+
     public ServerOptions options() {
         return options;
     }
