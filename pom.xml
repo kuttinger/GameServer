@@ -10,6 +10,7 @@
 		<module>core</module>
 		<module>login</module>
 		<module>match</module>
+		<module>account</module>
 	</modules>
 
 	<properties>
